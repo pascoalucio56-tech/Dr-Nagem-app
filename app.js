@@ -36,7 +36,9 @@ if (!stores || stores.length === 0 || stores.some(s => s.name === 'Loja Matriz' 
             daily: def ? def.daily : (store.daily || 0),
             monthlyGoal: def ? def.monthlyGoal : (store.monthlyGoal || store.daily * 30 || 0),
             actual: def ? def.actual : (store.actual || 0),
-            manager: store.manager || '-'
+            manager: store.manager || '-',
+            techCount: store.techCount || 0,
+            techNames: store.techNames || ''
         };
     });
 }
@@ -153,6 +155,12 @@ function toggleView(view) {
         navItems[0].classList.add('active');
         renderDashboard();
     }
+
+    // Always render productivity if on OS view
+    if (view === 'os') {
+        renderProductivity();
+    }
+
     lucide.createIcons();
 }
 
@@ -189,6 +197,9 @@ function renderStoresList() {
         const actualFormatted = (parseFloat(store.actual) || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
         const monthlyGoalFormatted = (parseFloat(store.monthlyGoal) || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
+        const remaining = (parseFloat(store.monthlyGoal) || 0) - (parseFloat(store.actual) || 0);
+        const remainingFormatted = remaining > 0 ? remaining.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : 'R$ 0,00';
+
         const performance = store.monthlyGoal > 0 ? Math.round((store.actual / store.monthlyGoal) * 100) : 0;
 
         // Count OS for this store
@@ -200,11 +211,14 @@ function renderStoresList() {
                     <h4>${store.name}</h4>
                     ${osCount > 0 ? `<span style="background: var(--primary); color: white; padding: 1px 6px; border-radius: 8px; font-size: 9px; font-weight: 700;">${osCount} OS</span>` : ''}
                 </div>
-                <p>Gerente: ${store.manager}</p>
+                <p>Gerente: ${store.manager} | Técnicos: ${store.techCount || 0}</p>
                 <div style="font-size: 11px; margin-top: 6px; color: var(--text-muted);">
                     <p>🎯 Meta Diária: <b>${dailyFormatted}</b></p>
                     <p>📅 Meta Mês: <b>${monthlyGoalFormatted}</b></p>
-                    <p style="color: var(--primary); font-weight: 700;">💰 Total Vendido: ${actualFormatted}</p>
+                    <p style="color: var(--primary); font-weight: 700;">💰 Vendido até hoje: ${actualFormatted}</p>
+                    <p style="color: ${remaining <= 0 ? '#166534' : '#991b1b'}; font-weight: 600;">
+                        ${remaining <= 0 ? '✅ Meta Atingida!' : `🚀 Faltam: ${remainingFormatted}`}
+                    </p>
                 </div>
             </div>
             <div style="text-align: right">
@@ -230,6 +244,7 @@ function renderOSTable() {
         tr.innerHTML = `
             <td>${os.date}</td>
             <td style="font-weight: 600; color: var(--text-color);">${os.store || '-'}</td>
+            <td style="color: var(--text-muted);">${os.technician || 'Não Atribuído'}</td>
             <td style="font-weight: 700; color: var(--accent);">#${os.number}</td>
             <td><span style="background: #dcfce7; color: #166534; padding: 2px 6px; border-radius: 4px; font-weight: 600;">${os.status}</span></td>
         `;
@@ -284,6 +299,8 @@ function editItem(index) {
     document.getElementById('store-monthly').value = store.monthlyGoal || 0;
     document.getElementById('store-actual').value = store.actual || 0;
     document.getElementById('store-manager').value = store.manager;
+    document.getElementById('store-tech-count').value = store.techCount || 0;
+    document.getElementById('store-tech-names').value = store.techNames || '';
     document.getElementById('item-modal').classList.add('active');
 }
 
@@ -309,9 +326,11 @@ if (storeForm) {
         const monthlyGoal = parseFloat(document.getElementById('store-monthly').value) || 0;
         const actual = parseFloat(document.getElementById('store-actual').value) || 0;
         const manager = document.getElementById('store-manager').value;
+        const techCount = parseInt(document.getElementById('store-tech-count').value) || 0;
+        const techNames = document.getElementById('store-tech-names').value;
 
         const goal = monthlyGoal > 0 ? Math.round((actual / monthlyGoal) * 100) : 0;
-        const data = { name, goal, daily, actual, manager, monthlyGoal };
+        const data = { name, goal, daily, actual, manager, monthlyGoal, techCount, techNames };
 
         if (index === '') stores.push(data);
         else stores[index] = data;
@@ -327,6 +346,39 @@ function saveAndRefresh() {
     renderAdminTable();
     renderDashboard();
     renderOSTable();
+    renderProductivity();
+}
+
+// Render Productivity View
+function renderProductivity() {
+    const container = document.getElementById('productivity-container');
+    if (!container) return;
+    container.innerHTML = '';
+
+    // Group OS by technician
+    const techStats = {};
+    osList.forEach(os => {
+        const tech = os.technician || 'Outros';
+        if (!techStats[tech]) techStats[tech] = 0;
+        techStats[tech]++;
+    });
+
+    Object.keys(techStats).forEach(tech => {
+        const count = techStats[tech];
+        const item = document.createElement('div');
+        item.style.cssText = 'display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #f3f4f6;';
+        item.innerHTML = `
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <div style="background: var(--primary-light); color: var(--primary); padding: 5px; border-radius: 50%;">
+                    <i data-lucide="user" style="width: 14px;"></i>
+                </div>
+                <span style="font-size: 13px; font-weight: 600;">${tech}</span>
+            </div>
+            <span class="badge" style="background: #e0f2fe; color: #0369a1; font-weight: 700;">${count} OS</span>
+        `;
+        container.appendChild(item);
+    });
+    lucide.createIcons();
 }
 
 // Excel Upload & Sync Logic
