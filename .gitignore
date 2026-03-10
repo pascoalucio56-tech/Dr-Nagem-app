@@ -1,0 +1,12 @@
+node_modules/
+temp_excel/
+temp.zip
+*.pdf
+*.xlsx
+.vscode/
+.DS_Store
+dist/
+www/
+capacitor.config.json
+android/
+ios/

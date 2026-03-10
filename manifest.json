@@ -1,0 +1,16 @@
+{
+  "name": "Dr. Nagem - Área Técnica",
+  "short_name": "Dr. Nagem",
+  "description": "Acompanhamento prático de metas e produtividade",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#f3f4f6",
+  "theme_color": "#1e40af",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/1170/1170577.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

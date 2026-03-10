@@ -1,0 +1,14 @@
+{
+  "dependencies": {
+    "@capacitor/android": "^6.2.1",
+    "@capacitor/core": "^6.2.1",
+    "pdf-parse": "^2.4.5",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^6.2.1"
+  },
+  "scripts": {
+    "build": "mkdir -p www && cp index.html index.css app.js manifest.json www/ && cp -r assets www/ || true"
+  }
+}

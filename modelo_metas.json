@@ -1,0 +1,20 @@
+[
+  {
+    "Nome": "Unidade Centro",
+    "Meta Diária": 5000,
+    "Vendido Hoje": 4500,
+    "Gerente": "Ana Olivera"
+  },
+  {
+    "Nome": "Unidade Shopping",
+    "Meta Diária": 3500,
+    "Vendido Hoje": 3800,
+    "Gerente": "Carlos Silva"
+  },
+  {
+    "Nome": "Unidade Norte",
+    "Meta Diária": 2000,
+    "Vendido Hoje": 1200,
+    "Gerente": "Paula Souza"
+  }
+]

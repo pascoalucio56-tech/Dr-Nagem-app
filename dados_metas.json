@@ -1,0 +1,20 @@
+[
+  {
+    "Nome": "Loja Matriz",
+    "Meta_Diaria": 5000,
+    "Vendido_Hoje": 4900,
+    "Gerente": "Carlos Silva"
+  },
+  {
+    "Nome": "Loja Shopping",
+    "Meta_Diaria": 3500,
+    "Vendido_Hoje": 2975,
+    "Gerente": "Ana Paula"
+  },
+  {
+    "Nome": "Loja Norte",
+    "Meta_Diaria": 2200,
+    "Vendido_Hoje": 1584,
+    "Gerente": "Ricardo M."
+  }
+]

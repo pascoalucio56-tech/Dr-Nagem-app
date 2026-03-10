@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Conversor PDF → Excel</title>
+    <!-- PDF.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <!-- SheetJS para exportar Excel -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #1e3a5f 0%, #1e40af 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            width: 100%;
+            max-width: 900px;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        h1 {
+            font-size: 28px;
+            color: #1e3a5f;
+            margin-bottom: 6px;
+        }
+
+        h1 span {
+            color: #1e40af;
+        }
+
+        .subtitle {
+            color: #64748b;
+            font-size: 14px;
+            margin-bottom: 30px;
+        }
+
+        .drop-zone {
+            border: 2.5px dashed #93c5fd;
+            border-radius: 14px;
+            background: #f0f7ff;
+            padding: 50px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 24px;
+        }
+
+        .drop-zone:hover,
+        .drop-zone.drag-over {
+            background: #dbeafe;
+            border-color: #1e40af;
+        }
+
+        .drop-icon {
+            font-size: 52px;
+            margin-bottom: 12px;
+        }
+
+        .drop-zone p {
+            color: #475569;
+            font-size: 15px;
+        }
+
+        .drop-zone p b {
+            color: #1e40af;
+        }
+
+        .drop-zone input {
+            display: none;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #1e40af, #1e3a5f);
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(30, 64, 175, 0.3);
+        }
+
+        .btn:disabled {
+            background: #94a3b8;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .btn.green {
+            background: linear-gradient(135deg, #16a34a, #059669);
+        }
+
+        .btn.green:hover {
+            box-shadow: 0 8px 20px rgba(22, 163, 74, 0.3);
+        }
+
+        .actions {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 24px;
+        }
+
+        .status {
+            padding: 12px 16px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 500;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .status.info {
+            background: #dbeafe;
+            color: #1e40af;
+            display: block;
+        }
+
+        .status.success {
+            background: #dcfce7;
+            color: #16a34a;
+            display: block;
+        }
+
+        .status.error {
+            background: #fee2e2;
+            color: #dc2626;
+            display: block;
+        }
+
+        .preview-wrap {
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .preview-header {
+            background: #f8fafc;
+            padding: 12px 16px;
+            font-weight: 700;
+            color: #1e3a5f;
+            font-size: 14px;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .count-badge {
+            background: #1e40af;
+            color: white;
+            padding: 2px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+        }
+
+        .table-scroll {
+            overflow-x: auto;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        thead th {
+            background: #1e3a5f;
+            color: white;
+            padding: 10px 14px;
+            text-align: left;
+            position: sticky;
+            top: 0;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        thead th:hover {
+            background: #1e40af;
+        }
+
+        tbody tr:nth-child(even) {
+            background: #f8fafc;
+        }
+
+        tbody tr:hover {
+            background: #dbeafe;
+        }
+
+        tbody td {
+            padding: 9px 14px;
+            border-bottom: 1px solid #f1f5f9;
+            color: #334155;
+        }
+
+        .empty-state {
+            padding: 40px;
+            text-align: center;
+            color: #94a3b8;
+        }
+
+        .settings {
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 20px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .settings h3 {
+            font-size: 14px;
+            font-weight: 700;
+            color: #374151;
+            margin-bottom: 12px;
+        }
+
+        .settings label {
+            font-size: 13px;
+            font-weight: 600;
+            color: #475569;
+            margin-bottom: 4px;
+            display: block;
+        }
+
+        .settings select,
+        .settings input[type="text"] {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 13px;
+            background: white;
+            color: #374151;
+            margin-bottom: 10px;
+        }
+
+        .checkbox-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: #475569;
+            cursor: pointer;
+        }
+
+        .checkbox-row input {
+            width: auto;
+            margin: 0;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>📄 Conversor PDF <span>→ Excel</span></h1>
+        <p class="subtitle">Selecione um arquivo PDF e exporte os dados para planilha (.xlsx)</p>
+
+        <div class="drop-zone" id="dropZone" onclick="document.getElementById('pdfInput').click()">
+            <div class="drop-icon">📂</div>
+            <p><b>Clique aqui</b> ou arraste o PDF nessa área</p>
+            <p style="font-size: 12px; color: #94a3b8; margin-top: 6px;">Suporta arquivos .pdf</p>
+            <input type="file" id="pdfInput" accept=".pdf">
+        </div>
+
+        <div class="settings">
+            <h3>⚙️ Configurações</h3>
+            <label>Nome da planilha de saída</label>
+            <input type="text" id="sheetName" value="Dados PDF" placeholder="Ex: Relatório">
+
+            <label>Separador de colunas (padrão: Tab)</label>
+            <select id="separator">
+                <option value="tab">Tabulação (Tab) — Recomendado</option>
+                <option value="space">Espaço simples</option>
+                <option value="comma">Vírgula</option>
+                <option value="semicolon">Ponto e vírgula</option>
+            </select>
+
+            <label class="checkbox-row">
+                <input type="checkbox" id="ignoreEmpty" checked>
+                Ignorar linhas em branco
+            </label>
+        </div>
+
+        <div class="status" id="status"></div>
+
+        <div class="actions">
+            <button class="btn green" id="exportBtn" disabled onclick="exportToExcel()">
+                📥 Baixar Excel (.xlsx)
+            </button>
+            <button class="btn" id="clearBtn" style="background:#e2e8f0; color:#374151;" onclick="clearAll()">
+                🗑️ Limpar
+            </button>
+        </div>
+
+        <div class="preview-wrap">
+            <div class="preview-header">
+                <span>📊 Pré-visualização dos Dados</span>
+                <span class="count-badge" id="rowCount">0 linhas</span>
+            </div>
+            <div class="table-scroll">
+                <div class="empty-state" id="emptyState">
+                    Nenhum arquivo carregado ainda. Selecione um PDF acima.
+                </div>
+                <table id="previewTable" style="display:none;">
+                    <thead id="previewHead"></thead>
+                    <tbody id="previewBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Config PDF.js worker
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+        let extractedData = [];
+        let currentFileName = 'dados';
+
+        // Drag and Drop
+        const dropZone = document.getElementById('dropZone');
+        dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+        dropZone.addEventListener('drop', e => {
+            e.preventDefault();
+            dropZone.classList.remove('drag-over');
+            const file = e.dataTransfer.files[0];
+            if (file && file.type === 'application/pdf') processPDF(file);
+            else showStatus('error', 'Por favor, selecione apenas arquivos PDF.');
+        });
+
+        document.getElementById('pdfInput').addEventListener('change', e => {
+            const file = e.target.files[0];
+            if (file) processPDF(file);
+        });
+
+        function showStatus(type, msg) {
+            const el = document.getElementById('status');
+            el.className = 'status ' + type;
+            el.textContent = msg;
+        }
+
+        async function processPDF(file) {
+            currentFileName = file.name.replace('.pdf', '');
+            showStatus('info', `⏳ Lendo "${file.name}"...`);
+            document.getElementById('exportBtn').disabled = true;
+
+            const arrayBuffer = await file.arrayBuffer();
+
+            try {
+                const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+                const totalPages = pdf.numPages;
+                let allLines = [];
+
+                for (let p = 1; p <= totalPages; p++) {
+                    const page = await pdf.getPage(p);
+                    const content = await page.getTextContent();
+                    const lineMap = {};
+
+                    content.items.forEach(item => {
+                        const y = Math.round(item.transform[5]);
+                        if (!lineMap[y]) lineMap[y] = [];
+                        lineMap[y].push(item.str);
+                    });
+
+                    const sortedY = Object.keys(lineMap).sort((a, b) => b - a);
+                    sortedY.forEach(y => {
+                        allLines.push(lineMap[y].join('\t'));
+                    });
+                }
+
+                const ignoreEmpty = document.getElementById('ignoreEmpty').checked;
+                const sepKey = document.getElementById('separator').value;
+                const sepMap = { tab: /\t/, space: / +/, comma: /,/, semicolon: /;/ };
+                const sep = sepMap[sepKey];
+
+                let rows = allLines
+                    .filter(l => !ignoreEmpty || l.trim() !== '')
+                    .map(l => l.split(sep).map(c => c.trim()));
+
+                extractedData = rows;
+                renderTable(rows);
+                showStatus('success', `✅ ${totalPages} página(s) lidas. ${rows.length} linhas extraídas. Clique em "Baixar Excel" para exportar.`);
+                document.getElementById('exportBtn').disabled = false;
+
+            } catch (err) {
+                showStatus('error', '❌ Erro ao ler o PDF: ' + err.message);
+            }
+        }
+
+        function renderTable(rows) {
+            if (!rows.length) { document.getElementById('emptyState').style.display = 'block'; return; }
+
+            const maxCols = Math.max(...rows.map(r => r.length));
+            const head = document.getElementById('previewHead');
+            const body = document.getElementById('previewBody');
+
+            head.innerHTML = '<tr>' + Array.from({ length: maxCols }, (_, i) => `<th onclick="sortTable(${i})">Coluna ${i + 1} ▾</th>`).join('') + '</tr>';
+
+            body.innerHTML = rows.slice(0, 500).map(row => {
+                const cells = Array.from({ length: maxCols }, (_, i) => `<td>${row[i] || ''}</td>`).join('');
+                return `<tr>${cells}</tr>`;
+            }).join('');
+
+            document.getElementById('previewTable').style.display = 'table';
+            document.getElementById('emptyState').style.display = 'none';
+            document.getElementById('rowCount').textContent = rows.length + ' linhas';
+        }
+
+        let sortAsc = {};
+        function sortTable(col) {
+            sortAsc[col] = !sortAsc[col];
+            extractedData.sort((a, b) => {
+                const va = a[col] || '', vb = b[col] || '';
+                return sortAsc[col] ? va.localeCompare(vb, 'pt', { numeric: true }) : vb.localeCompare(va, 'pt', { numeric: true });
+            });
+            renderTable(extractedData);
+        }
+
+        function exportToExcel() {
+            if (!extractedData.length) return;
+
+            const sheetName = document.getElementById('sheetName').value || 'Dados PDF';
+            const ws = XLSX.utils.aoa_to_sheet(extractedData);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, sheetName.substring(0, 31));
+            XLSX.writeFile(wb, currentFileName + '_convertido.xlsx');
+            showStatus('success', '✅ Arquivo Excel baixado com sucesso!');
+        }
+
+        function clearAll() {
+            extractedData = [];
+            document.getElementById('previewTable').style.display = 'none';
+            document.getElementById('emptyState').style.display = 'block';
+            document.getElementById('emptyState').textContent = 'Nenhum arquivo carregado ainda. Selecione um PDF acima.';
+            document.getElementById('rowCount').textContent = '0 linhas';
+            document.getElementById('exportBtn').disabled = true;
+            document.getElementById('status').className = 'status';
+            document.getElementById('pdfInput').value = '';
+        }
+    </script>
+</body>
+
+</html>

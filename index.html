@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Sist. de Metas - Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <link rel="stylesheet" href="index.css">
+    <link rel="manifest" href="manifest.json">
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- Dashboard View -->
+        <div id="dashboard-view">
+            <header>
+                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                    <div>
+                        <h1>Dr. Nagem</h1>
+                        <p style="font-size: 16px; font-weight: 600; color: rgba(255,255,255,0.9);">Área Técnica</p>
+                        <p id="current-date" style="font-size: 12px; opacity: 0.8; margin-top: 5px;"></p>
+                    </div>
+                    <div style="background: rgba(255,255,255,0.2); padding: 8px; border-radius: 10px;">
+                        <i data-lucide="building-2"></i>
+                    </div>
+                </div>
+            </header>
+
+            <div class="main-content">
+                <div class="kpi-grid">
+                    <div class="card">
+                        <div class="kpi-title">Média de Desempenho</div>
+                        <div class="kpi-value">0%</div>
+                        <div class="kpi-trend trend-up">
+                            <i data-lucide="trending-up" style="width:14px"></i> Global
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="kpi-title">Faturamento Total</div>
+                        <div class="kpi-value">R$ 1.4M</div>
+                        <div class="kpi-trend trend-up">
+                            <i data-lucide="arrow-up-right" style="width:14px"></i> 5.1%
+                        </div>
+                    </div>
+                    <div class="card full">
+                        <div class="kpi-title">Desempenho por Loja</div>
+                        <div style="height: 180px;">
+                            <canvas id="storesChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section-title">
+                    <span>Minhas Lojas</span>
+                    <i data-lucide="list-filter" style="width:18px; color: var(--text-muted)"></i>
+                </div>
+
+                <div class="store-list" id="store-list-container">
+                    <!-- Dinamicamente preenchido -->
+                </div>
+            </div>
+        </div>
+
+        <!-- OS Tracking View -->
+        <div id="os-view" style="display: none;">
+            <header>
+                <h1>Dr. Nagem</h1>
+                <p style="font-size: 16px; font-weight: 600; color: rgba(255,255,255,0.9);">RPS Geradas</p>
+            </header>
+            <div class="main-content">
+                <div class="card" style="margin-bottom: 20px;">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                        <h3 style="font-size: 15px;">Histórico de OS/RPS</h3>
+                        <span id="os-count" class="badge"
+                            style="background: var(--primary); color: white; padding: 2px 8px; border-radius: 10px; font-size: 11px;">0
+                            OS</span>
+                    </div>
+                    <div style="overflow-x: auto;">
+                        <table class="data-table" style="font-size: 11px;">
+                            <thead>
+                                <tr>
+                                    <th>Data</th>
+                                    <th>Loja</th>
+                                    <th>Nº OS</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="os-table-body">
+                                <!-- Populated via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Admin View -->
+        <div id="admin-panel">
+            <div style="margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <h2 style="font-size: 20px; font-weight: 800;">Painel de Gestão</h2>
+                    <p style="color: var(--text-muted); font-size: 14px;">Edite as informações em tempo real</p>
+                </div>
+                <button class="btn" style="width: auto; padding: 10px 15px; margin: 0;" onclick="showAddModal()">
+                    <i data-lucide="plus"></i>
+                </button>
+            </div>
+
+            <div class="card" style="padding: 0; overflow: hidden;">
+                <div style="overflow-x: auto;">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Meta/Loja</th>
+                                <th>Meta Diária</th>
+                                <th>Meta Mensal</th>
+                                <th>Vendido (R$)</th>
+                                <th>Desempenho (%)</th>
+                                <th>Gerente</th>
+                                <th style="text-align: right;">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-table-body">
+                            <!-- Populated via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Edit/Add Modal (Hidden) -->
+            <div id="item-modal" class="modal-overlay">
+                <div class="modal-content">
+                    <h3 id="modal-title">Editar Meta</h3>
+                    <form id="store-form">
+                        <input type="hidden" id="edit-index">
+                        <div class="form-group">
+                            <label>Identificação</label>
+                            <input type="text" id="store-name" placeholder="Ex: Loja Centro" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Meta Diária (R$)</label>
+                            <input type="number" step="0.01" id="store-daily" placeholder="1000" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Meta Mensal (R$)</label>
+                            <input type="number" step="0.01" id="store-monthly" placeholder="15000" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Valor Vendido Hoje (R$)</label>
+                            <input type="number" id="store-actual" placeholder="850" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Responsável</label>
+                            <input type="text" id="store-manager" placeholder="Nome do gerente">
+                        </div>
+                        <div style="display: flex; gap: 10px;">
+                            <button type="submit" class="btn">Salvar</button>
+                            <button type="button" class="btn btn-secondary" onclick="closeModal()">Sair</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Spreadsheet Sync Section -->
+            <div class="card" style="margin-top: 25px; border: 1px dashed var(--primary);">
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
+                    <i data-lucide="file-spreadsheet" style="color: var(--primary);"></i>
+                    <h3 style="font-size: 15px; margin: 0;">Sincronizar Dados</h3>
+                </div>
+                <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 15px;">
+                    Sincronize Metas ou Ordens de Serviço (OS).
+                </p>
+                <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                    <button class="btn btn-secondary" onclick="triggerUpload('metas')" style="font-size: 11px;">
+                        <i data-lucide="bar-chart"></i> Metas
+                    </button>
+                    <button class="btn btn-secondary" onclick="triggerUpload('os')" style="font-size: 11px;">
+                        <i data-lucide="file-text"></i> Lista de OS
+                    </button>
+                </div>
+                <input type="file" id="excel-upload" accept=".xlsx, .xls, .csv" style="display: none;">
+
+                <div style="margin-top: 10px; text-align: center;">
+                    <a href="#" id="download-model"
+                        style="font-size: 10px; color: var(--primary); text-decoration: none; font-weight: 600; margin-right: 15px;">
+                        <i data-lucide="download" style="width: 12px;"></i> Modelo Metas
+                    </a>
+                    <a href="#" id="download-os-model"
+                        style="font-size: 10px; color: var(--primary); text-decoration: none; font-weight: 600;">
+                        <i data-lucide="download" style="width: 12px;"></i> Modelo OS
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <nav class="bottom-nav">
+            <a href="#" class="nav-item active" onclick="toggleView('dashboard')">
+                <i data-lucide="layout-grid"></i>
+                <span>Painel</span>
+            </a>
+            <a href="#" class="nav-item" onclick="toggleView('os')">
+                <i data-lucide="file-check-2"></i>
+                <span>OS/RPS</span>
+            </a>
+            <a href="#" class="nav-item" onclick="toggleView('admin')">
+                <i data-lucide="shield-check"></i>
+                <span>Admin</span>
+            </a>
+            <a href="#" class="nav-item">
+                <i data-lucide="settings"></i>
+                <span>Config</span>
+            </a>
+        </nav>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+
+</html>
