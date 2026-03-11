@@ -135,12 +135,14 @@ function toggleView(view) {
     const dashboard = document.getElementById('dashboard-view');
     const admin = document.getElementById('admin-panel');
     const osView = document.getElementById('os-view');
+    const configPanel = document.getElementById('config-panel');
     const navItems = document.querySelectorAll('.nav-item');
 
     navItems.forEach(item => item.classList.remove('active'));
     dashboard.style.display = 'none';
     admin.style.display = 'none';
     osView.style.display = 'none';
+    if (configPanel) configPanel.style.display = 'none';
 
     if (view === 'admin') {
         admin.style.display = 'block';
@@ -150,6 +152,9 @@ function toggleView(view) {
         osView.style.display = 'block';
         navItems[1].classList.add('active');
         renderOSTable();
+    } else if (view === 'config') {
+        if (configPanel) configPanel.style.display = 'block';
+        navItems[3].classList.add('active');
     } else {
         dashboard.style.display = 'block';
         navItems[0].classList.add('active');
@@ -412,11 +417,29 @@ document.getElementById('excel-upload').addEventListener('change', function (e) 
                     };
                 });
             } else {
-                osList = jsonData.map(row => ({
-                    date: row['Data'] || row['data'] || 'N/A',
-                    number: row['Numero OS'] || row['numero_os'] || row['Nº OS'] || row['OS'] || '0000',
-                    status: row['Status'] || row['status'] || 'RPS Gerada'
-                }));
+                const newOSEntries = jsonData.map(row => {
+                    const tech = row['Tecnico'] || row['Técnico'] || row['Funcionario'] || row['Colaborador'] || 'Não Atribuído';
+                    const storeName = row['Loja'] || row['loja'] || row['Unidade'] || 'Não Atribuída';
+                    return {
+                        date: row['Data'] || row['data'] || 'N/A',
+                        number: String(row['Numero OS'] || row['numero_os'] || row['Nº OS'] || row['OS'] || '0000'),
+                        status: row['Status'] || row['status'] || 'RPS Gerada',
+                        store: storeName,
+                        technician: tech
+                    };
+                });
+
+                // Merge with existing list, avoiding duplicates by OS number
+                const existingNumbers = new Set(osList.map(os => String(os.number)));
+                newOSEntries.forEach(entry => {
+                    if (!existingNumbers.has(entry.number)) {
+                        osList.push(entry);
+                    } else {
+                        // Update existing entry if needed (e.g. status change)
+                        const idx = osList.findIndex(os => String(os.number) === entry.number);
+                        osList[idx] = { ...osList[idx], ...entry };
+                    }
+                });
             }
             saveAndRefresh();
             alert(`Sincronização de ${currentUploadType} concluída!`);
@@ -470,9 +493,51 @@ function initChart() {
     });
 }
 
+// Config Logic
+function saveGlobalConfig() {
+    const companyName = document.getElementById('config-company-name').value;
+    const globalGoal = document.getElementById('config-global-goal').value;
+
+    const settings = { companyName, globalGoal };
+    localStorage.setItem('appSettings', JSON.stringify(settings));
+
+    // Update UI
+    const h1s = document.querySelectorAll('header h1');
+    h1s.forEach(h1 => h1.textContent = companyName);
+
+    alert('Configurações salvas com sucesso!');
+}
+
+function exportAppData() {
+    const data = {
+        stores: stores,
+        osList: osList,
+        settings: JSON.parse(localStorage.getItem('appSettings'))
+    };
+
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `backup_dr_nagem_${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     renderDashboard();
     renderOSTable();
+
+    // Load settings
+    const settings = JSON.parse(localStorage.getItem('appSettings'));
+    if (settings) {
+        document.getElementById('config-company-name').value = settings.companyName || 'Dr. Nagem';
+        document.getElementById('config-global-goal').value = settings.globalGoal || '';
+        const h1s = document.querySelectorAll('header h1');
+        h1s.forEach(h1 => h1.textContent = settings.companyName);
+    }
+
     const options = { weekday: 'long', day: 'numeric', month: 'long' };
     const dateE = document.getElementById('current-date');
     if (dateE) dateE.textContent = new Date().toLocaleDateString('pt-BR', options);
