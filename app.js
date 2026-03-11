@@ -155,6 +155,7 @@ function toggleView(view) {
     } else if (view === 'config') {
         if (configPanel) configPanel.style.display = 'block';
         navItems[3].classList.add('active');
+        renderConfigStores();
     } else {
         dashboard.style.display = 'block';
         navItems[0].classList.add('active');
@@ -494,6 +495,54 @@ function initChart() {
 }
 
 // Config Logic
+function renderConfigStores() {
+    const container = document.getElementById('config-stores-list');
+    if (!container) return;
+    container.innerHTML = '';
+
+    stores.forEach((store, index) => {
+        const div = document.createElement('div');
+        div.style.cssText = 'padding: 12px; border: 1px solid #f3f4f6; border-radius: 8px; margin-bottom: 10px; background: #fafafa;';
+        div.innerHTML = `
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+                <div>
+                    <label style="font-size: 10px; color: var(--text-muted); font-weight: 600;">NOME DA LOJA</label>
+                    <input type="text" class="bulk-store-name" data-index="${index}" value="${store.name}" 
+                           style="padding: 6px; font-size: 13px; font-weight: 600;">
+                </div>
+                <div>
+                    <label style="font-size: 10px; color: var(--text-muted); font-weight: 600;">META DO MÊS (R$)</label>
+                    <input type="number" step="0.01" class="bulk-store-goal" data-index="${index}" value="${store.monthlyGoal}" 
+                           style="padding: 6px; font-size: 13px; font-weight: 600;">
+                </div>
+            </div>
+        `;
+        container.appendChild(div);
+    });
+}
+
+function saveAllStoresConfig() {
+    const names = document.querySelectorAll('.bulk-store-name');
+    const goals = document.querySelectorAll('.bulk-store-goal');
+
+    names.forEach((input, i) => {
+        const index = input.getAttribute('data-index');
+        const newName = input.value;
+        const newGoal = parseFloat(goals[i].value) || 0;
+
+        stores[index].name = newName;
+        stores[index].monthlyGoal = newGoal;
+
+        // Recalculate performance if possible
+        if (newGoal > 0) {
+            stores[index].goal = Math.round((stores[index].actual / newGoal) * 100);
+        }
+    });
+
+    saveAndRefresh();
+    alert('Todas as lojas foram atualizadas com sucesso!');
+}
+
 function saveGlobalConfig() {
     const companyName = document.getElementById('config-company-name').value;
     const globalGoal = document.getElementById('config-global-goal').value;

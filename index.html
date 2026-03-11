@@ -242,6 +242,19 @@
             </div>
 
             <div class="card" style="margin-top: 20px;">
+                <h3 style="font-size: 15px; margin-bottom: 15px;">Gerenciar Lojas (Edição Rápida)</h3>
+                <p style="font-size: 11px; color: var(--text-muted); margin-bottom: 15px;">
+                    Altere os nomes e as metas mensais de todas as lojas abaixo.
+                </p>
+                <div id="config-stores-list">
+                    <!-- Dinamicamente preenchido pelo JS -->
+                </div>
+                <button class="btn" style="margin-top: 15px;" onclick="saveAllStoresConfig()">
+                    <i data-lucide="save"></i> Salvar Todas as Lojas
+                </button>
+            </div>
+
+            <div class="card" style="margin-top: 20px;">
                 <h3 style="font-size: 15px; margin-bottom: 15px;">Backup de Dados</h3>
                 <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 15px;">
                     Exporte seus dados atuais para segurança ou restauração.
